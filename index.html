@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Chicago White Sox — Standings, Schedule &amp; Race</title>
+<!-- PWA: installable home-screen app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="White Sox">
+<meta name="theme-color" content="#0b0b0d">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="icon" type="image/png" href="icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root{
+    --bg:#0b0b0d; --sox:#000000; --silver:#c4ced4;
+    --panel:#16171b; --panel2:#1e2026; --line:#2e3138;
+    --txt:#ffffff; --muted:#9aa3ad; --accent:#c4ced4; --gold:#f3c96b;
+    --win:#0f3a24; --winline:#2bd66f; --loss:#3a1622; --lossline:#ff5c7c;
+    --live:#2bd66f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:linear-gradient(180deg,#1b1d22 0%,var(--bg) 42%);color:var(--txt);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;padding:0 0 60px}
+  /* TICKER */
+  .ticker{position:sticky;top:0;z-index:60;background:linear-gradient(90deg,#000,#1b1d22);border-bottom:1px solid var(--line);overflow:hidden;white-space:nowrap;padding-top:env(safe-area-inset-top,0px)}
+  .ticker-row{display:flex;align-items:center}
+  .ticker-lbl{flex:none;background:var(--silver);color:#000;font-weight:800;font-size:11px;letter-spacing:.5px;padding:7px 11px;text-transform:uppercase;z-index:2}
+  .ticker-mask{overflow:hidden;flex:1}
+  .ticker-track{display:inline-block;white-space:nowrap;animation:tick 55s linear infinite;will-change:transform}
+  .ticker:hover .ticker-track{animation-play-state:paused}
+  .ticker-item{display:inline-flex;align-items:center;gap:6px;margin:0 18px;font-size:12.5px;font-weight:600;color:var(--txt);padding:7px 0}
+  .ticker-item b{color:var(--gold)}
+  .ticker-item .mut{color:var(--muted);font-weight:400}
+  @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @media (prefers-reduced-motion:reduce){.ticker-track{animation:none}}
+  /* HEADER */
+  header{padding:16px 18px 14px;text-align:center;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(196,206,212,.10),transparent)}
+  .bigsock{font-size:54px;line-height:1;margin-bottom:2px;animation:bob 4.5s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @media (prefers-reduced-motion:reduce){.bigsock{animation:none}}
+  h1{font-size:23px;letter-spacing:-.3px;display:flex;align-items:center;gap:9px;justify-content:center;flex-wrap:wrap}
+  .badge{background:var(--silver);color:#000;font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
+  .sub{color:var(--muted);margin-top:5px;font-size:13px}
+  .sub b{color:var(--silver)}
+  .statusbar{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);padding:6px 12px;border-radius:20px;font-size:12.5px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+  .chip.live .dot{background:var(--live);box-shadow:0 0 8px var(--live);animation:pulse 1.6s infinite}
+  .chip.snap .dot{background:var(--gold)}
+  .chip.err .dot{background:var(--lossline)}
+  .chip.load .dot{background:var(--accent);animation:pulse .8s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .rbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 13px;border-radius:20px;cursor:pointer;font-weight:600;font-size:12.5px}
+  .rbtn:hover{border-color:var(--silver)}
+  .wrap{max-width:780px;margin:0 auto;padding:0 14px}
+  /* NAV */
+  nav{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 4px;justify-content:center}
+  nav button{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:9px 14px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13.5px;transition:.15s}
+  nav button:hover{color:var(--txt);border-color:var(--silver)}
+  nav button.on{background:var(--silver);color:#000;border-color:var(--silver)}
+  section{display:none;animation:fade .25s}
+  section.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .note{color:var(--muted);font-size:12.5px;margin:14px 0;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--silver);padding:10px 14px;border-radius:8px}
+  .note b{color:var(--txt)}
+  .note.warn{border-left-color:var(--gold)}
+  /* CARDS */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px;margin:12px 0}
+  .card h2{font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .hero{text-align:center;padding:6px 0 4px}
+  .hero .vs{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .hero .opp{font-size:21px;font-weight:800;margin:4px 0}
+  .hero .meta{font-size:13px;color:var(--muted)}
+  .hero .cd{font-size:14px;color:var(--gold);font-weight:800;margin-top:8px}
+  .hero .score{font-size:32px;font-weight:900;letter-spacing:1px;margin:2px 0;font-variant-numeric:tabular-nums}
+  .res-w{color:var(--winline)} .res-l{color:var(--lossline)}
+  .inn{display:inline-flex;align-items:center;gap:6px;background:#0f2a1a;color:var(--winline);border:1px solid var(--winline);border-radius:6px;padding:2px 8px;font-size:11.5px;font-weight:800}
+  .snapgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .snapgrid .b{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+  .snapgrid .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .snapgrid .v{font-size:16px;font-weight:800;margin-top:2px}
+  .streak-w{color:var(--winline)} .streak-l{color:var(--lossline)}
+  /* SCHEDULE */
+  .mhd{font-size:12px;text-transform:uppercase;letter-spacing:1.4px;color:var(--gold);margin:18px 2px 6px;font-weight:800}
+  .grow{display:grid;grid-template-columns:56px 1fr 84px;gap:9px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px}
+  .grow.next{border-color:var(--gold);box-shadow:inset 3px 0 0 var(--gold)}
+  .grow.done{opacity:.9}
+  .grow .dt{font-size:11.5px;color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25}
+  .grow .dt small{display:block;color:var(--muted);font-weight:600;font-size:10.5px}
+  .grow .op{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+  .grow .op .ha{color:var(--muted);font-weight:700;font-size:11px}
+  .grow .rt{text-align:right;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums}
+  .tag{font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.3px}
+  .tag.w{background:var(--win);color:var(--winline)} .tag.l{background:var(--loss);color:var(--lossline)}
+  .tag.ppd{background:#2a2418;color:var(--gold);border:1px solid #6b5a2a}
+  .tag.live{background:#0f2a1a;color:var(--winline);border:1px solid var(--winline)}
+  /* TABLE */
+  .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:7px 4px;text-align:center;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  th{color:var(--muted);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+  td.team{text-align:left;font-weight:700;white-space:nowrap}
+  td.pos{font-weight:800;width:22px;color:var(--muted)}
+  td.pts{font-weight:900;color:var(--gold)}
+  tr.sox td{background:rgba(196,206,212,.15)}
+  tr.sox td.pos{box-shadow:inset 3px 0 0 var(--silver)}
+  .divhd{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--silver);margin:16px 2px 4px;font-weight:800}
+  .divhd.me{color:var(--gold)}
+  @media (max-width:430px){ .hide-s{display:none} th,td{padding:7px 3px;font-size:12.5px} }
+  /* LEAGUE SLATE */
+  .lg{display:grid;grid-template-columns:1fr 78px 1fr;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px}
+  .lg.sox{border-color:var(--silver);box-shadow:inset 0 0 0 1px rgba(196,206,212,.3)}
+  .lg .side{display:flex;align-items:center;gap:7px;min-width:0}
+  .lg .side.r{flex-direction:row-reverse;text-align:right}
+  .lg .side span{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lg .mid{text-align:center;font-variant-numeric:tabular-nums}
+  .lg .sc{font-size:16px;font-weight:900}
+  .lg .tm{font-size:10px;color:var(--muted);font-weight:700}
+  .lg .tm.on{color:var(--live)}
+  .kv{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .kv:last-child{border-bottom:0}
+  .kv .k{color:var(--muted);font-size:13px}
+  .kv .v{font-weight:800;font-size:15px}
+  .foot{color:var(--muted);font-size:11.5px;line-height:1.7;margin:22px 0 0;padding-top:14px;border-top:1px solid var(--line)}
+  .foot a{color:var(--silver)}
+</style>
+</head>
+<body>
+
+<div class="ticker">
+  <div class="ticker-row">
+    <span class="ticker-lbl">🧦 White Sox</span>
+    <div class="ticker-mask"><div class="ticker-track" id="tickerTrack"></div></div>
+  </div>
+</div>
+
+<header>
+  <div class="bigsock">🧦</div>
+  <h1>Chicago White Sox <span class="badge" id="recBadge">2026</span></h1>
+  <div class="sub">AL Central · <b>Rate Field</b>, Chicago · <span id="subLine">Live from the MLB Stats API</span></div>
+  <div class="statusbar">
+    <span class="chip load" id="chip"><span class="dot"></span><span id="chipTxt">Loading…</span></span>
+    <button class="rbtn" id="refreshBtn">↻ Refresh</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav>
+    <button class="on" data-t="now">⚡ Now</button>
+    <button data-t="standings">📊 Standings</button>
+    <button data-t="race">🏁 Race</button>
+    <button data-t="schedule">📅 Schedule</button>
+    <button data-t="league">⚾ League</button>
+  </nav>
+
+  <section class="on" id="now"><div id="nowEl"></div></section>
+  <section id="standings"><div id="standingsEl"></div></section>
+  <section id="race"><div id="raceEl"></div></section>
+  <section id="schedule"><div id="scheduleEl"></div></section>
+  <section id="league"><div id="leagueEl"></div></section>
+</div>
+
+<div class="wrap">
+  <div class="foot">
+    All data live from the <a href="https://statsapi.mlb.com" target="_blank" rel="noopener">MLB Stats API</a> — schedule, scores, standings and the wild-card race are fetched on load and every 60s; nothing here is hand-typed. Times are Eastern, as MLB publishes them. When the network is unreachable the app shows the last successful load and says so on the status chip. Unofficial fan dashboard — not affiliated with the Chicago White Sox or MLB.
+  </div>
+</div>
+
+<script>
+/* ============ CONFIG ============ */
+const MLB="https://statsapi.mlb.com/api/v1";
+const TEAM=145;                    // Chicago White Sox
+const SEASON=2026;
+const AL=103, NL=104;
+const CACHE_KEY="sox-cache-v1";
+const DIV_NAME={200:"AL West",201:"AL East",202:"AL Central",203:"NL West",204:"NL East",205:"NL Central"};
+const MY_DIV=202;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function fetchJSON(u){ const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw new Error(r.status); return r.json(); }
+// Ported from the previous White Sox app — MLB publishes in Eastern, so show Eastern.
+function isoLocal(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function etDay(ts){ return new Date(ts).toLocaleDateString("en-US",{timeZone:"America/New_York",weekday:"short",month:"short",day:"numeric"}); }
+function etTime(ts){ return new Date(ts).toLocaleTimeString("en-US",{timeZone:"America/New_York",hour:"numeric",minute:"2-digit"})+" ET"; }
+function shortName(full){
+  if(!full) return "TBD";
+  const two={"Red Sox":1,"White Sox":1,"Blue Jays":1};
+  const p=String(full).split(" "); const last2=p.slice(-2).join(" ");
+  return two[last2]?last2:p[p.length-1];
+}
+const gbTxt=g=>(g==null||g==="-")?"—":g;
+const ord=n=>n+(["st","nd","rd"][n-1]||"th");
+
+/* ============ STATE ============ */
+const STATE={sched:[],divs:[],wc:[],slate:[],stamp:null,ok:false};
+
+/* ============ PARSE ============ */
+function mapGame(g){
+  const h=g.teams&&g.teams.home, a=g.teams&&g.teams.away;
+  if(!h||!a) return null;
+  const st=g.status||{}, ls=g.linescore||{};
+  const isHome=(h.team&&h.team.id)===TEAM;
+  const mine=isHome?h:a, other=isHome?a:h;
+  const state=st.abstractGameState||"";           // Preview | Live | Final
+  const detailed=st.detailedState||"";            // Scheduled | In Progress | Final | Postponed
+  return {
+    pk:String(g.gamePk),
+    ts:g.gameDate,
+    t:new Date(g.gameDate).getTime(),
+    isHome, venue:(g.venue&&g.venue.name)||"",
+    opp:shortName(other.team&&other.team.name), oppId:(other.team&&other.team.id)||0,
+    us:mine.score==null?null:mine.score, them:other.score==null?null:other.score,
+    homeName:shortName(h.team&&h.team.name), awayName:shortName(a.team&&a.team.name),
+    homeSc:h.score==null?null:h.score, awaySc:a.score==null?null:a.score,
+    state, detailed,
+    ppd:/postponed|cancelled/i.test(detailed),
+    live:state==="Live",
+    final:state==="Final",
+    inning:ls.currentInningOrdinal||"", inningState:ls.inningState||""
+  };
+}
+function gamesFrom(d){
+  const out=[];
+  ((d&&d.dates)||[]).forEach(dt=>(dt.games||[]).forEach(g=>{ const m=mapGame(g); if(m) out.push(m); }));
+  return out.sort((a,b)=>a.t-b.t);
+}
+function splitRec(t,type){
+  const s=((t.records||{}).splitRecords||[]).find(x=>x.type===type);
+  return s?`${s.wins}-${s.losses}`:"—";
+}
+function parseDivs(d){
+  return ((d&&d.records)||[]).map(r=>({
+    id:(r.division&&r.division.id)||0,
+    name:DIV_NAME[(r.division&&r.division.id)]||"?",
+    teams:((r.teamRecords)||[]).slice().sort((a,b)=>(+a.divisionRank||99)-(+b.divisionRank||99)).map(t=>({
+      id:t.team.id, name:shortName(t.team.name),
+      w:t.wins, l:t.losses, pct:(t.leagueRecord&&t.leagueRecord.pct)||"",
+      gb:t.gamesBack, rank:+t.divisionRank||0,
+      streak:(t.streak&&t.streak.streakCode)||"", l10:splitRec(t,"lastTen"),
+      home:splitRec(t,"home"), away:splitRec(t,"away"),
+      rd:t.runDifferential, magic:t.magicNumber, elim:t.eliminationNumber,
+      leader:!!t.divisionLeader, clinched:!!t.clinched,
+      wcRank:t.wildCardRank?+t.wildCardRank:null, wcgb:t.wildCardGamesBack,
+      us:t.team.id===TEAM
+    }))
+  })).filter(x=>x.teams.length);
+}
+function parseWC(d){
+  const rows=[];
+  ((d&&d.records)||[]).forEach(r=>((r.teamRecords)||[]).forEach(t=>rows.push({
+    id:t.team.id, name:shortName(t.team.name), w:t.wins, l:t.losses,
+    rank:t.wildCardRank?+t.wildCardRank:99, gb:t.wildCardGamesBack,
+    elim:t.wildCardEliminationNumber, us:t.team.id===TEAM
+  })));
+  return rows.sort((a,b)=>a.rank-b.rank);
+}
+
+/* ============ LOAD ============ */
+function saveCache(){
+  try{ localStorage.setItem(CACHE_KEY,JSON.stringify({sched:STATE.sched,divs:STATE.divs,wc:STATE.wc,slate:STATE.slate,stamp:Date.now()})); }catch(e){}
+}
+function loadCache(){
+  try{
+    const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");
+    if(c&&c.sched&&c.sched.length){ STATE.sched=c.sched; STATE.divs=c.divs||[]; STATE.wc=c.wc||[]; STATE.slate=c.slate||[]; STATE.stamp=c.stamp; return true; }
+  }catch(e){}
+  return false;
+}
+async function load(){
+  const today=isoLocal(new Date());
+  const [sch,st,wc,sl]=await Promise.all([
+    fetchJSON(`${MLB}/schedule?sportId=1&teamId=${TEAM}&season=${SEASON}&gameType=R&hydrate=linescore`).catch(()=>null),
+    fetchJSON(`${MLB}/standings?leagueId=${AL},${NL}&season=${SEASON}&standingsTypes=regularSeason`).catch(()=>null),
+    fetchJSON(`${MLB}/standings?leagueId=${AL}&season=${SEASON}&standingsTypes=wildCard`).catch(()=>null),
+    fetchJSON(`${MLB}/schedule?sportId=1&date=${today}&hydrate=linescore,team`).catch(()=>null)
+  ]);
+  const sched=sch?gamesFrom(sch):[];
+  const divs=st?parseDivs(st):[];
+  const good=sched.length>0 && divs.length>=4;
+  if(good){
+    STATE.sched=sched; STATE.divs=divs;
+    STATE.wc=wc?parseWC(wc):[];
+    STATE.slate=sl?gamesFrom(sl):[];
+    STATE.stamp=Date.now(); STATE.ok=true; saveCache();
+  } else { STATE.ok=false; }
+  return good;
+}
+
+/* ============ DERIVED ============ */
+const finals=()=>STATE.sched.filter(g=>g.final&&g.us!=null&&g.them!=null);
+const liveGame=()=>STATE.sched.find(g=>g.live)||null;
+const nextGame=()=>STATE.sched.find(g=>!g.final&&!g.ppd&&g.t>=Date.now()-4*3600e3)||null;
+const lastGame=()=>{const f=finals();return f.length?f[f.length-1]:null};
+const myDiv=()=>STATE.divs.find(d=>d.id===MY_DIV)||null;
+const sox=()=>{ for(const d of STATE.divs){ const t=d.teams.find(x=>x.us); if(t) return t; } return null; };
+const leadsDiv=()=>{ const s=sox(); return !!s&&s.rank===1; };
+function countdown(t){
+  const ms=t-Date.now(); if(ms<=0) return "First pitch";
+  const d=Math.floor(ms/864e5), h=Math.floor(ms%864e5/36e5), m=Math.floor(ms%36e5/6e4);
+  if(d>0) return `in ${d} day${d===1?"":"s"} ${h}h`;
+  if(h>0) return `in ${h}h ${m}m`;
+  return `in ${m}m`;
+}
+
+/* ============ RENDER ============ */
+function setChip(cls,txt){ const c=$("#chip"); c.className="chip "+cls; $("#chipTxt").textContent=txt; }
+
+function renderNow(){
+  const el=$("#nowEl"); const lv=liveGame(), ng=nextGame(), lg=lastGame(), s=sox();
+  let h="";
+  if(!STATE.sched.length){ el.innerHTML=`<div class="note">No schedule data yet — pull to refresh.</div>`; return; }
+  if(lv){
+    h+=`<div class="card"><h2>🔴 Live now</h2><div class="hero">
+      <div class="vs">${lv.isHome?"Rate Field · Home":"Away · "+esc(lv.venue||"")}</div>
+      <div class="score">${lv.us==null?"–":lv.us} – ${lv.them==null?"–":lv.them}</div>
+      <div class="opp" style="font-size:17px">${lv.isHome?"vs":"at"} ${esc(lv.opp)}</div>
+      <div class="meta" style="margin-top:6px"><span class="inn">${esc(lv.inningState||"")} ${esc(lv.inning||"")}</span></div>
+    </div></div>`;
+  }
+  if(ng&&!lv){
+    h+=`<div class="card"><h2>⚡ Next game</h2><div class="hero">
+      <div class="vs">${ng.isHome?"Rate Field · Home":"Away · "+esc(ng.venue||"")}</div>
+      <div class="opp">${ng.isHome?"vs":"at"} ${esc(ng.opp)}</div>
+      <div class="meta">${esc(etDay(ng.ts))} · ${esc(etTime(ng.ts))}</div>
+      <div class="cd">${esc(countdown(ng.t))}</div>
+    </div></div>`;
+  }
+  if(lg){
+    const win=lg.us>lg.them;
+    h+=`<div class="card"><h2>⏮ Last game</h2><div class="hero">
+      <div class="vs">${lg.isHome?"Home":"Away"} · ${esc(etDay(lg.ts))}</div>
+      <div class="score ${win?"res-w":"res-l"}">${lg.us} – ${lg.them}</div>
+      <div class="opp" style="font-size:17px">${win?"W":"L"} ${lg.isHome?"vs":"at"} ${esc(lg.opp)}</div>
+    </div></div>`;
+  }
+  if(s){
+    const sc=(s.streak||"").charAt(0)==="W"?"streak-w":"streak-l";
+    h+=`<div class="card"><h2>🧦 Snapshot</h2><div class="snapgrid">
+      <div class="b"><div class="k">Record</div><div class="v">${s.w}-${s.l} <span style="font-size:12px;color:var(--muted)">${esc(s.pct)}</span></div></div>
+      <div class="b"><div class="k">AL Central</div><div class="v">${ord(s.rank)}${s.rank===1?" 👑":""} · ${esc(gbTxt(s.gb))} GB</div></div>
+      <div class="b"><div class="k">Streak</div><div class="v ${sc}">${esc(s.streak||"—")}</div></div>
+      <div class="b"><div class="k">Last 10</div><div class="v">${esc(s.l10)}</div></div>
+      <div class="b"><div class="k">Home / Away</div><div class="v" style="font-size:14px">${esc(s.home)} · ${esc(s.away)}</div></div>
+      <div class="b"><div class="k">Run diff</div><div class="v">${s.rd>0?"+":""}${s.rd==null?"—":s.rd}</div></div>
+    </div>
+    ${s.magic&&s.magic!=="-"?`<div class="kv" style="margin-top:10px"><span class="k">Magic number to win the division</span><span class="v">${esc(s.magic)}</span></div>`:""}
+    </div>`;
+  }
+  el.innerHTML=h;
+  $("#recBadge").textContent = s?`${s.w}-${s.l} · ${ord(s.rank)}`:"2026";
+  $("#subLine").textContent = lv?`Live: ${lv.isHome?"vs":"at"} ${lv.opp}`
+    : (ng?`Next: ${ng.isHome?"vs":"at"} ${ng.opp} · ${etDay(ng.ts)}`:"Live from the MLB Stats API");
+}
+
+function divTable(d){
+  let h=`<div class="divhd ${d.id===MY_DIV?"me":""}">${esc(d.name)}${d.id===MY_DIV?" · White Sox":""}</div>
+  <div class="card" style="margin-top:4px"><div class="tblwrap"><table><thead><tr>
+    <th></th><th style="text-align:left">Team</th><th>W</th><th>L</th><th>PCT</th><th>GB</th>
+    <th class="hide-s">L10</th><th class="hide-s">STRK</th></tr></thead><tbody>`;
+  d.teams.forEach(t=>{
+    h+=`<tr class="${t.us?"sox":""}">
+      <td class="pos">${t.rank}</td>
+      <td class="team">${t.us?"🧦 ":""}${esc(t.name)}${t.clinched?" ✅":""}</td>
+      <td>${t.w}</td><td>${t.l}</td><td>${esc(t.pct)}</td><td>${esc(gbTxt(t.gb))}</td>
+      <td class="hide-s">${esc(t.l10)}</td><td class="hide-s">${esc(t.streak)}</td></tr>`;
+  });
+  return h+`</tbody></table></div></div>`;
+}
+function renderStandings(){
+  const el=$("#standingsEl");
+  if(!STATE.divs.length){ el.innerHTML=`<div class="note">Standings unavailable — retrying.</div>`; return; }
+  const mine=myDiv(), rest=STATE.divs.filter(d=>d.id!==MY_DIV);
+  let h=`<div class="note">📊 <b>2026 standings</b> — live from MLB. The Sox division comes first; every other division follows.</div>`;
+  if(mine) h+=divTable(mine);
+  rest.forEach(d=>{ h+=divTable(d); });
+  el.innerHTML=h;
+}
+
+function renderRace(){
+  const el=$("#raceEl"); const s=sox(); const wc=STATE.wc;
+  if(!s){ el.innerHTML=`<div class="note">Standings unavailable — retrying.</div>`; return; }
+  let h="";
+  // MLB's wildCard standings type EXCLUDES division leaders. If the Sox are top of the
+  // Central they simply won't be in this list — say that, don't imply they're out of it.
+  if(leadsDiv()){
+    h+=`<div class="note warn">🏁 <b>The White Sox lead the AL Central</b> — ${s.w}-${s.l}, ${(()=>{const d=myDiv();if(!d||d.teams.length<2)return "top of the division";const g=gbTxt(d.teams[1].gb);return g==="—"?"level at the top":`${esc(g)} clear of ${esc(d.teams[1].name)}`;})()}. Division leaders aren't part of the wild-card race, so they don't appear in the table below. If they slip to second, their wild-card position shows up here automatically.</div>
+      <div class="card"><h2>👑 Division lead</h2>
+      <div class="kv"><span class="k">Record</span><span class="v">${s.w}-${s.l} (${esc(s.pct)})</span></div>
+      <div class="kv"><span class="k">Lead over 2nd</span><span class="v">${(()=>{const d=myDiv();if(!d||d.teams.length<2)return "—";const second=d.teams[1];return esc(gbTxt(second.gb))+" games";})()}</span></div>
+      ${s.magic&&s.magic!=="-"?`<div class="kv"><span class="k">Magic number</span><span class="v">${esc(s.magic)}</span></div>`:""}
+      <div class="kv"><span class="k">Run differential</span><span class="v">${s.rd>0?"+":""}${s.rd==null?"—":s.rd}</span></div>
+      <div class="kv"><span class="k">Last 10 · streak</span><span class="v">${esc(s.l10)} · ${esc(s.streak||"—")}</span></div></div>`;
+  } else {
+    h+=`<div class="note">🏁 <b>AL wild-card race</b> — the Sox sit ${ord(s.rank)} in the Central, so they're in this race. Top 3 make the playoffs.</div>`;
+  }
+  if(wc.length){
+    h+=`<div class="card"><h2>🃏 AL wild card</h2><div class="tblwrap"><table><thead><tr>
+      <th></th><th style="text-align:left">Team</th><th>W</th><th>L</th><th>GB</th></tr></thead><tbody>`;
+    wc.forEach(t=>{
+      h+=`<tr class="${t.us?"sox":""}">
+        <td class="pos">${t.rank<=3?"✅":t.rank}</td>
+        <td class="team">${t.us?"🧦 ":""}${esc(t.name)}</td>
+        <td>${t.w}</td><td>${t.l}</td><td>${esc(gbTxt(t.gb))}</td></tr>`;
+    });
+    h+=`</tbody></table></div><div style="font-size:11.5px;color:var(--muted);margin-top:8px">✅ = currently holding a wild-card spot. Division leaders are excluded from this list by MLB.</div></div>`;
+  }
+  el.innerHTML=h;
+}
+
+function renderSchedule(){
+  const el=$("#scheduleEl"); const gs=STATE.sched; const ng=nextGame();
+  if(!gs.length){ el.innerHTML=`<div class="note">Schedule unavailable — retrying.</div>`; return; }
+  const w=finals().filter(g=>g.us>g.them).length, l=finals().length-w;
+  let h=`<div class="note">📅 <b>${gs.length} games</b> on the 2026 regular-season calendar — ${finals().length} played (${w}-${l}), ${gs.filter(g=>!g.final&&!g.ppd).length} to come. Times are Eastern.</div>`;
+  let month="";
+  gs.forEach(g=>{
+    const m=new Date(g.ts).toLocaleDateString("en-US",{timeZone:"America/New_York",month:"long",year:"numeric"});
+    if(m!==month){ month=m; h+=`<div class="mhd">${esc(m)}</div>`; }
+    const isNext=ng&&g.pk===ng.pk;
+    let rt="";
+    if(g.ppd) rt=`<span class="tag ppd">PPD</span>`;
+    else if(g.final&&g.us!=null) rt=`<span class="tag ${g.us>g.them?"w":"l"}">${g.us>g.them?"W":"L"}</span> ${g.us}–${g.them}`;
+    else if(g.live) rt=`<span class="tag live">${esc(g.inningState||"")} ${esc(g.inning||"")}</span>`;
+    else rt=esc(etTime(g.ts).replace(" ET",""));
+    h+=`<div class="grow ${g.final?"done":""} ${isNext?"next":""}" ${isNext?'id="nextRow"':''}>
+      <div class="dt">${esc(etDay(g.ts))}<small>${g.isHome?"HOME":"AWAY"}</small></div>
+      <div class="op"><span class="ha">${g.isHome?"vs":"at"}</span> ${esc(g.opp)}</div>
+      <div class="rt">${rt}</div></div>`;
+  });
+  el.innerHTML=h;
+}
+
+function renderLeague(){
+  const el=$("#leagueEl"); const gs=STATE.slate;
+  if(!gs.length){ el.innerHTML=`<div class="note">⚾ No MLB games scheduled today, or the slate hasn't posted yet.</div>`; return; }
+  const live=gs.filter(g=>g.live).length;
+  let h=`<div class="note">⚾ <b>${gs.length} games</b> around the league today${live?` · <b>${live} live</b>`:""}. Refreshes with everything else, every 60 seconds.</div>`;
+  gs.forEach(g=>{
+    const isSox=g.homeName==="White Sox"||g.awayName==="White Sox";
+    const mid=(g.final||g.live)
+      ? `<div class="sc">${g.awaySc==null?"–":g.awaySc} – ${g.homeSc==null?"–":g.homeSc}</div>
+         <div class="tm ${g.live?"on":""}">${esc(g.live?((g.inningState||"")+" "+(g.inning||"")):(g.ppd?"PPD":"Final"))}</div>`
+      : `<div class="sc" style="font-size:13px">${esc(etTime(g.ts).replace(" ET",""))}</div><div class="tm">ET</div>`;
+    h+=`<div class="lg ${isSox?"sox":""}">
+      <div class="side"><span>${isSox&&g.awayName==="White Sox"?"🧦 ":""}${esc(g.awayName)}</span></div>
+      <div class="mid">${mid}</div>
+      <div class="side r"><span>${isSox&&g.homeName==="White Sox"?"🧦 ":""}${esc(g.homeName)}</span></div></div>`;
+  });
+  el.innerHTML=h;
+}
+
+function renderTicker(){
+  const items=[]; const s=sox(), lv=liveGame(), ng=nextGame();
+  if(lv) items.push(`🔴 <b>${esc(lv.isHome?lv.opp+" @ White Sox":"White Sox @ "+lv.opp)}</b> ${lv.them==null?"":`<b>${lv.us}–${lv.them}</b>`} <span class="mut">${esc(lv.inningState||"")} ${esc(lv.inning||"")}</span>`);
+  if(s) items.push(`🧦 <b>${s.w}-${s.l}</b> <span class="mut">${ord(s.rank)} in the AL Central · ${esc(gbTxt(s.gb))} GB · ${esc(s.streak||"")} · L10 ${esc(s.l10)}</span>`);
+  finals().slice(-4).reverse().forEach(g=>{
+    items.push(`${g.us>g.them?"✅":"❌"} ${g.us>g.them?"W":"L"} <b>${g.us}–${g.them}</b> ${g.isHome?"vs":"at"} ${esc(g.opp)} <span class="mut">${esc(etDay(g.ts))}</span>`);
+  });
+  if(ng) items.push(`📅 Next: ${ng.isHome?"vs":"at"} <b>${esc(ng.opp)}</b> <span class="mut">${esc(etDay(ng.ts))} · ${esc(etTime(ng.ts))} · ${esc(countdown(ng.t))}</span>`);
+  const lgLive=STATE.slate.filter(g=>g.live).length;
+  if(lgLive) items.push(`⚾ <b>${lgLive}</b> games live around the league`);
+  if(!items.length) items.push(`🧦 Chicago White Sox <span class="mut">2026</span>`);
+  const one=items.map(t=>`<span class="ticker-item">${t}</span>`).join("");
+  $("#tickerTrack").innerHTML=one+one;   // duplicated so the marquee loops seamlessly
+}
+
+function renderAll(){ renderNow(); renderStandings(); renderRace(); renderSchedule(); renderLeague(); renderTicker(); }
+
+/* ============ REFRESH + NAV + INIT ============ */
+async function refresh(){
+  setChip("load","Updating…");
+  const ok=await load();
+  if(ok){ setChip("live","Live · MLB · "+new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})); }
+  else if(STATE.sched.length){ setChip("snap","Offline · last update "+(STATE.stamp?new Date(STATE.stamp).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"unknown")); }
+  else { setChip("err","No data — check connection"); }
+  renderAll();
+}
+
+document.querySelectorAll("nav button").forEach(b=>{b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll("section").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); $("#"+b.dataset.t).classList.add("on"); window.scrollTo(0,0);
+  if(b.dataset.t==="schedule"){ const n=$("#nextRow"); if(n) n.scrollIntoView({block:"center"}); }
+};});
+$("#refreshBtn").onclick=refresh;
+
+if(loadCache()){ setChip("snap","Cached — updating…"); renderAll(); }
+refresh();
+setInterval(refresh,60000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refresh(); });
+
+// PWA service worker
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
