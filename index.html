@@ -455,7 +455,8 @@ function renderLeague(){
 function renderTicker(){
   const items=[]; const s=sox(), lv=liveGame(), ng=nextGame();
   if(lv) items.push(`🔴 <b>${esc(lv.isHome?lv.opp+" @ White Sox":"White Sox @ "+lv.opp)}</b> ${lv.them==null?"":`<b>${lv.us}–${lv.them}</b>`} <span class="mut">${esc(lv.inningState||"")} ${esc(lv.inning||"")}</span>`);
-  if(s) items.push(`🧦 <b>${s.w}-${s.l}</b> <span class="mut">${ord(s.rank)} in the AL Central · ${esc(gbTxt(s.gb))} GB · ${esc(s.streak||"")} · L10 ${esc(s.l10)}</span>`);
+  // "— GB" reads wrong for a team in first; say what first place actually means.
+  if(s) items.push(`🧦 <b>${s.w}-${s.l}</b> <span class="mut">${ord(s.rank)} in the AL Central · ${s.rank===1?"leading":esc(gbTxt(s.gb))+" GB"} · ${esc(s.streak||"")} · L10 ${esc(s.l10)}</span>`);
   finals().slice(-4).reverse().forEach(g=>{
     items.push(`${g.us>g.them?"✅":"❌"} ${g.us>g.them?"W":"L"} <b>${g.us}–${g.them}</b> ${g.isHome?"vs":"at"} ${esc(g.opp)} <span class="mut">${esc(etDay(g.ts))}</span>`);
   });
